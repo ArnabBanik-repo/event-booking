@@ -8,7 +8,7 @@ import (
 
 type Event struct {
 	gorm.Model
-	ID          string    `gorm:"primaryKey"`
+	ID          string    
 	Name        string    `binding:"required"`
 	Description string    `binding:"required"`
 	Location    string    `binding:"required"`
