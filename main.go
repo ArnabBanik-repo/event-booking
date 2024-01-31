@@ -24,9 +24,7 @@ func init() {
 func main() {
 	server := gin.Default()
 
-	server.GET("/events", controllers.GetEvents)
-  server.GET("/events/:id", controllers.GetEvent)
-	server.POST("/events", controllers.CreateEvent)
+  controllers.RegisterRoutes(server)
 
 	err := server.Run()
 	if err != nil {

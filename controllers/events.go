@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/ArnabBanik-repo/event-booking/initializers"
 	"github.com/ArnabBanik-repo/event-booking/models"
@@ -10,7 +11,6 @@ import (
 )
 
 func GetEvents(c *gin.Context) {
-
 	var events []models.Event
 	result := initializers.DB.Find(&events)
 	if result.Error != nil {
@@ -24,13 +24,14 @@ func GetEvents(c *gin.Context) {
 func GetEvent(c *gin.Context) {
   id := c.Param("id")
   var event models.Event
-  result := initializers.DB.First(&event, id)
+
+  result := initializers.DB.First(&event, "id = ?", id)
   if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "fail", "err": result.Error.Error()})
-    return 
+    c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": "No records with that ID"})
+    return
   }
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": event, "count": result.RowsAffected})
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": event})
 }
 
 func CreateEvent(c *gin.Context) {
@@ -51,4 +52,52 @@ func CreateEvent(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"status": "ok", "data": e})
+}
+
+func UpdateEvent(c *gin.Context) {
+
+  id := c.Param("id")
+  var event models.Event
+
+  result := initializers.DB.First(&event, "id = ?", id)
+  if result.Error != nil {
+    c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": result.Error.Error()})
+    return
+  }
+
+  type e struct {
+    Name string
+    Description string
+    Location string
+    DateTime time.Time
+  }
+
+  var updatedEvent e
+
+  err := c.BindJSON(&updatedEvent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": err.Error()})
+		return
+	}
+
+  result = initializers.DB.Model(&event).Updates(updatedEvent)
+  if result.Error != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "err": result.Error.Error()})
+    return
+  }
+
+  c.JSON(http.StatusOK, gin.H{"status": "success", "data": event})
+}
+
+func DeleteEvent(c *gin.Context){
+  id := c.Param("id")
+  event := models.Event{ID: id}
+
+  result := initializers.DB.Delete(&event)
+  if result.Error != nil || result.RowsAffected == 0 {
+    c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": "That record could not be deleted"})
+    return
+  }
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
