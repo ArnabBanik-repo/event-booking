@@ -43,7 +43,9 @@ func CreateEvent(c *gin.Context) {
 	}
 
 	e.ID = uuid.NewString()
-	e.UserId = uuid.NewString()
+  ui, _  := c.Get("user")
+  u := ui.(models.User)
+  e.UserId = u.ID
 
 	result := initializers.DB.Create(&e)
 	if result.Error != nil {
