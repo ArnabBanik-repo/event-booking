@@ -11,13 +11,26 @@ import (
 
 func GetEvents(c *gin.Context) {
 
-	result := initializers.DB.Find(&models.Event{})
+	var events []models.Event
+	result := initializers.DB.Find(&events)
 	if result.Error != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "fail", "err": result.Error.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"status": "fail", "err": result.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": result})
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": events, "count": result.RowsAffected})
+}
+
+func GetEvent(c *gin.Context) {
+  id := c.Param("id")
+  var event models.Event
+  result := initializers.DB.First(&event, id)
+  if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"status": "fail", "err": result.Error.Error()})
+    return 
+  }
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": event, "count": result.RowsAffected})
 }
 
 func CreateEvent(c *gin.Context) {
@@ -28,17 +41,14 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	e.Id, err = uuid.NewUUID()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": err.Error()})
-		return
-	}
-	e.UserId = "142"
-	result := initializers.DB.Create(&models.Event{})
+	e.ID = uuid.NewString()
+	e.UserId = uuid.NewString()
+
+	result := initializers.DB.Create(&e)
 	if result.Error != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "fail", "err": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "err": result.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "ok", "data": e, "dbData": result})
+	c.JSON(http.StatusCreated, gin.H{"status": "ok", "data": e})
 }
