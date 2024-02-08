@@ -67,6 +67,15 @@ func UpdateEvent(c *gin.Context) {
     return
   }
 
+  // TODO: Make this a single call to db
+  // Probably this check wont be required, and a single db call would be enough
+  ui, _  := c.Get("user")
+  u := ui.(models.User)
+  if event.UserId != u.ID {
+    c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "err": "You cannot update a post you did not create"})
+    return
+  }
+
   type e struct {
     Name string
     Description string
@@ -95,7 +104,22 @@ func DeleteEvent(c *gin.Context){
   id := c.Param("id")
   event := models.Event{ID: id}
 
-  result := initializers.DB.Delete(&event)
+  result := initializers.DB.First(&event)
+  if result.Error != nil {
+    c.JSON(http.StatusBadRequest, gin.H {"status": "fail", "err": result.Error.Error()})
+    return
+  }
+
+  // TODO: Make this a single call to db
+  // Probably this check wont be required, and a single db call would be enough
+  ui, _  := c.Get("user")
+  u := ui.(models.User)
+  if event.UserId != u.ID {
+    c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "err": "You cannot delete a post you did not create"})
+    return
+  }
+
+  result = initializers.DB.Delete(&event)
   if result.Error != nil || result.RowsAffected == 0 {
     c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "err": "That record could not be deleted"})
     return
